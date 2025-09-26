@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gözümden Anica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- TEMEL STİLLER --- */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111827; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); color: #f472b6; } 50% { transform: scale(1.1); color: #fda4af; } }
+        #loading-overlay .fa-heart { font-size: 5rem; animation: pulse 2s infinite; }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); }
+        .font-dancing-script { font-family: 'Dancing Script', cursive; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        
+        /* --- BUTON STİLLERİ --- */
+        .filter-btn { padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; background-color: #374151; color: white; transition: all 0.2s ease-in-out; }
+        .filter-btn.active { background-color: #ec4899; color: white; box-shadow: 0 0 15px rgba(236, 72, 153, 0.6); }
+        .lang-btn { background-color: transparent; border: 1px solid #4b5563; color: #d1d5db; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; transition: all 0.2s; }
+        .lang-btn.active { background-color: #ec4899; border-color: #ec4899; color: white; }
+
+        /* --- GALERİ & MASONRY DÜZENİ --- */
+        #gallery-grid { position: relative; transition: height 0.5s ease-in-out; }
+        .gallery-item {
+            position: absolute;
+            width: calc(50% - 0.5rem); /* 2 sütun için varsayılan */
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, top 0.5s ease, left 0.5s ease;
+        }
+        .gallery-item:hover { transform: scale(1.03); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        /* Farklı ekran boyutları için sütun genişlikleri */
+        @media (min-width: 640px) { .gallery-item { width: calc(33.333% - 0.66rem); } }
+        @media (min-width: 768px) { .gallery-item { width: calc(25% - 0.75rem); } }
+        @media (min-width: 1024px) { .gallery-item { width: calc(20% - 0.8rem); } }
+
+        .gallery-item img, .gallery-item video { width: 100%; height: auto; display: block; }
+
+        /* --- FAVORİ BUTONU --- */
+        .fav-btn { position: absolute; top: 8px; right: 8px; color: rgba(255, 255, 255, 0.7); background-color: rgba(0,0,0,0.4); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; opacity: 0; transform: scale(0.8); z-index: 10; }
+        .gallery-item:hover .fav-btn { opacity: 1; transform: scale(1); }
+        .fav-btn.favorited { color: #ec4899; opacity: 1; transform: scale(1.1); }
+        
+        /* --- MODAL (BÜYÜK GÖRSEL) STİLLERİ --- */
+        #modal { transition: opacity 0.3s ease-in-out; }
+        #modal-content img.zoomed { transform: scale(2); cursor: grab; }
+        #modal-content img { transition: transform 0.3s ease; }
+        .modal-btn { position: absolute; top: 1/2; -translate-y-1/2; background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; transition: background-color 0.2s ease; z-index: 60; }
+        .modal-btn:hover { background-color: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-montserrat overflow-hidden">
+
+    <div id="loading-overlay">
+        <i class="fa-solid fa-heart"></i>
+        <p class="font-dancing-script text-3xl mt-4" data-key="loadingText">Anica'nın En Güzel Anıları Yükleniyor...</p>
+    </div>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <header class="text-center mb-4">
+            <div class="flex justify-center gap-2 mb-4">
+                <button id="lang-tr" class="lang-btn" onclick="setLanguage('tr')">Türkçe</button>
+                <button id="lang-de" class="lang-btn" onclick="setLanguage('de')">Deutsch</button>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-dancing-script font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500" data-key="mainTitle">Gözümden Anica</h1>
+            <p class="text-gray-300 text-lg" data-key="subtitle">Senin en doğal anların...</p>
+        </header>
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+             <div id="music-player" class="bg-white/10 backdrop-blur-sm p-1 rounded-full">
+                <button id="play-pause-btn" class="w-12 h-12 flex items-center justify-center bg-pink-500 rounded-full text-white hover:bg-pink-600 transition-colors">
+                    <i id="play-icon" class="fa-solid fa-play"></i><i id="pause-icon" class="fa-solid fa-pause hidden"></i>
+                </button>
+                <audio id="background-music" loop><source src="m1.m4a" type="audio/mp4"></audio>
+            </div>
+            <div id="filter-buttons" class="flex justify-center flex-wrap gap-2">
+                <button class="filter-btn active" data-key="filterMixed" data-filter="all"><i class="fa-solid fa-random mr-2"></i>Karışık</button>
+                <button class="filter-btn" data-key="filterTimeline" data-filter="timeline"><i class="fa-solid fa-calendar-alt mr-2"></i>Zaman Tüneli</button>
+                <button class="filter-btn" data-key="filterPhotos" data-filter="image"><i class="fa-solid fa-image mr-2"></i>Fotoğraflar</button>
+                <button class="filter-btn" data-key="filterVideos" data-filter="video"><i class="fa-solid fa-video mr-2"></i>Videolar</button>
+                <button class="filter-btn" data-key="filterFavorites" data-filter="favorite"><i class="fa-solid fa-heart text-pink-300 mr-2"></i>Favoriler</button>
+                <button id="surprise-btn" class="filter-btn" data-key="filterSurprise"><i class="fa-solid fa-gift mr-2"></i>Beni Şaşırt!</button>
+            </div>
+        </div>
+        <div id="gallery-grid" class="mx-auto" style="max-width: 1600px;"></div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/90 z-50 flex justify-center items-center p-4 backdrop-blur-sm">
+        <button id="close-modal" class="absolute top-4 right-4 text-white text-4xl z-50">&times;</button>
+        <button id="prev-btn" class="modal-btn left-4"><i class="fa-solid fa-chevron-left"></i></button>
+        <button id="next-btn" class="modal-btn right-4"><i class="fa-solid fa-chevron-right"></i></button>
+        <div id="modal-content" class="w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center"></div>
+        <div class="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-4">
+            <button id="slideshow-btn" class="modal-btn relative !top-auto !-translate-y-0">
+                <i id="slideshow-play" class="fa-solid fa-play"></i><i id="slideshow-pause" class="fa-solid fa-pause hidden"></i>
+            </button>
+            <a id="download-btn" href="#" download class="modal-btn relative !top-auto !-translate-y-0">
+                <i class="fa-solid fa-download"></i>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // --- DİL DESTEĞİ ---
+        const translations = { tr: { pageTitle: "Gözümden Anica", mainTitle: "Gözümden Anica", subtitle: "Senin en doğal anların...", loadingText: "Anica'nın En Güzel Anları Yükleniyor...", filterMixed: "Karışık", filterTimeline: "Zaman Tüneli", filterPhotos: "Fotoğraflar", filterVideos: "Videolar", filterFavorites: "Favoriler", filterSurprise: "Beni Şaşırt!", emptyGallery: "Bu kategoride gösterilecek bir anı bulunamadı." }, de: { pageTitle: "Anica durch meine Augen", mainTitle: "Anica durch meine Augen", subtitle: "Deine natürlichsten Momente...", loadingText: "Anicas schönste Momente werden geladen...", filterMixed: "Zufällig", filterTimeline: "Zeitleiste", filterPhotos: "Fotos", filterVideos: "Videos", filterFavorites: "Favoriten", filterSurprise: "Überrasch mich!", emptyGallery: "In dieser Kategorie wurden keine Momente gefunden." } };
+        function setLanguage(lang) { localStorage.setItem('galleryLanguage', lang); document.documentElement.lang = lang; document.querySelectorAll('[data-key]').forEach(el => { const key = el.getAttribute('data-key'); if (translations[lang][key]) { const icon = el.querySelector('i'); el.innerHTML = icon ? `<i class="${icon.className}"></i> ${translations[lang][key]}` : translations[lang][key]; } }); document.title = translations[lang].pageTitle; document.getElementById('lang-tr').classList.toggle('active', lang === 'tr'); document.getElementById('lang-de').classList.toggle('active', lang === 'de'); renderGallery(document.querySelector('.filter-btn.active')?.dataset.filter || 'all'); }
+
+        let baseMediaItems = []; let randomOrderItems = []; let timelineOrderItems = [];
+        
+        // --- KALICI FAVORİLER ---
+        function loadFavorites() {
+            const favoriteSrcs = JSON.parse(localStorage.getItem('anicaFavorites') || '[]');
+            baseMediaItems.forEach(item => {
+                if (favoriteSrcs.includes(item.src)) {
+                    item.favorite = true;
+                }
+            });
+        }
+        function saveFavorites() {
+            const favoriteSrcs = baseMediaItems.filter(item => item.favorite).map(item => item.src);
+            localStorage.setItem('anicaFavorites', JSON.stringify(favoriteSrcs));
+        }
+
+        // --- AKILLI DOSYA KONTROLÜ ---
+        async function buildAndVerifyMediaList() {
+            const promises = [];
+            for (let i = 1; i <= 50; i++) {
+                promises.push(new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = `f${i}.jpg`;
+                    img.onload = () => resolve({ status: 'fulfilled', value: { type: 'image', src: `f${i}.jpg`, favorite: false } });
+                    img.onerror = () => resolve({ status: 'rejected' });
+                }));
+                promises.push(new Promise((resolve) => {
+                    const video = document.createElement('video');
+                    video.src = `v${i}.mp4`;
+                    video.onloadeddata = () => resolve({ status: 'fulfilled', value: { type: 'video', src: `v${i}.mp4`, favorite: false } });
+                    video.onerror = () => resolve({ status: 'rejected' });
+                }));
+            }
+            const results = await Promise.all(promises);
+            baseMediaItems = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+            
+            loadFavorites(); // Kayıtlı favorileri yükle
+            
+            randomOrderItems = [...baseMediaItems].sort(() => Math.random() - 0.5);
+            timelineOrderItems = [...baseMediaItems].sort((a, b) => parseInt(a.src.replace(/\D/g, '')) - parseInt(b.src.replace(/\D/g, '')));
+        }
+        
+        // --- DOM ELEMENTLERİ ---
+        const galleryGrid = document.getElementById('gallery-grid'), modal = document.getElementById('modal'), closeModalBtn = document.getElementById('close-modal'), modalContent = document.getElementById('modal-content'), prevBtn = document.getElementById('prev-btn'), nextBtn = document.getElementById('next-btn'), filterButtons = document.querySelectorAll('.filter-btn'), audio = document.getElementById('background-music'), playPauseBtn = document.getElementById('play-pause-btn'), playIcon = document.getElementById('play-icon'), pauseIcon = document.getElementById('pause-icon'), surpriseBtn = document.getElementById('surprise-btn'), slideshowBtn = document.getElementById('slideshow-btn'), slideshowPlayIcon = document.getElementById('slideshow-play'), slideshowPauseIcon = document.getElementById('slideshow-pause'), downloadBtn = document.getElementById('download-btn');
+        let currentIndex = 0, currentlyDisplayedItems = [], slideshowInterval = null;
+        let touchStartX = 0, touchEndX = 0; // Swipe için
+
+        // --- GALERİ RENDER & MASONRY ---
+        function applyMasonryLayout() {
+            const items = Array.from(galleryGrid.children);
+            if(items.length === 0) {
+                galleryGrid.style.height = '0px';
+                return;
+            };
+
+            const gap = 16;
+            const itemWidth = items[0].offsetWidth;
+            const numColumns = Math.round(galleryGrid.offsetWidth / (itemWidth + gap));
+            const colHeights = Array(numColumns).fill(0);
+
+            items.forEach(item => {
+                const shortestColIndex = colHeights.indexOf(Math.min(...colHeights));
+                item.style.left = `${shortestColIndex * (itemWidth + gap)}px`;
+                item.style.top = `${colHeights[shortestColIndex]}px`;
+                colHeights[shortestColIndex] += item.offsetHeight + gap;
+            });
+            galleryGrid.style.height = `${Math.max(...colHeights)}px`;
+        }
+        
+        async function renderGallery(filter = 'all') {
+            galleryGrid.innerHTML = '';
+            let sourceList = (filter === 'timeline') ? timelineOrderItems : randomOrderItems;
+            currentlyDisplayedItems = sourceList.filter(item => { if (filter === 'all' || filter === 'timeline') return true; if (filter === 'favorite') return item.favorite; return item.type === filter; });
+            
+            const currentLang = localStorage.getItem('galleryLanguage') || 'tr';
+            if (currentlyDisplayedItems.length === 0) { galleryGrid.innerHTML = `<p class="text-gray-400 col-span-full text-center py-10 w-full">${translations[currentLang].emptyGallery}</p>`; applyMasonryLayout(); return; }
+            
+            const mediaPromises = [];
+            currentlyDisplayedItems.forEach((item, displayIndex) => {
+                const itemWrapper = document.createElement('div');
+                itemWrapper.className = 'gallery-item';
+                itemWrapper.dataset.displayIndex = displayIndex;
+                
+                const favoritedClass = item.favorite ? 'favorited' : '';
+                const favButton = `<div class="fav-btn ${favoritedClass}" data-src="${item.src}"><i class="fa-solid fa-heart" style="display: ${item.favorite ? 'block' : 'none'};"></i><i class="fa-regular fa-heart" style="display: ${item.favorite ? 'none' : 'block'};"></i></div>`;
+                const videoIcon = item.type === 'video' ? `<div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"><i class="fa-solid fa-play text-white text-4xl"></i></div>` : '';
+                
+                let mediaElement;
+                if (item.type === 'image') {
+                    const img = new Image();
+                    img.src = item.src;
+                    img.alt = "Anı";
+                    img.className = "w-full h-auto object-cover";
+                    img.loading = "lazy";
+                    mediaPromises.push(new Promise(resolve => img.onload = resolve));
+                    itemWrapper.innerHTML = img.outerHTML + videoIcon + favButton;
+                } else {
+                    const videoHTML = `<video src="${item.src}#t=0.1" class="w-full h-auto object-cover pointer-events-none" muted preload="metadata"></video>`;
+                    mediaPromises.push(Promise.resolve()); // Videolar için bekleme yapmıyoruz, masonry hızlıca çalışsın diye
+                    itemWrapper.innerHTML = videoHTML + videoIcon + favButton;
+                }
+                
+                galleryGrid.appendChild(itemWrapper);
+            });
+            
+            galleryGrid.querySelectorAll('.gallery-item').forEach(el => el.addEventListener('click', e => { if (!e.target.closest('.fav-btn')) openModal(parseInt(el.dataset.displayIndex, 10)); }));
+            galleryGrid.querySelectorAll('.fav-btn').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); toggleFavorite(btn.dataset.src, btn); }));
+            
+            await Promise.all(mediaPromises);
+            applyMasonryLayout();
+        }
+
+        // --- FAVORİ, MODAL & MEDYA KONTROLLERİ ---
+        function toggleFavorite(src, btn) { const item = baseMediaItems.find(i => i.src === src); if (!item) return; item.favorite = !item.favorite; btn.classList.toggle('favorited'); btn.querySelector('.fa-solid').style.display = item.favorite ? 'block' : 'none'; btn.querySelector('.fa-regular').style.display = item.favorite ? 'none' : 'block'; saveFavorites(); if(document.querySelector('.filter-btn.active').dataset.filter === 'favorite') renderGallery('favorite'); }
+        
+        function openModal(index) {
+            currentIndex = index; 
+            const item = currentlyDisplayedItems[currentIndex];
+            downloadBtn.href = item.src;
+            downloadBtn.download = item.src.split('/').pop();
+
+            if (item.type === 'image') {
+                modalContent.innerHTML = `<img src="${item.src}" class="max-w-full max-h-full object-contain rounded-lg select-none">`;
+                modalContent.querySelector('img').addEventListener('dblclick', (e) => e.target.classList.toggle('zoomed'));
+            } else {
+                modalContent.innerHTML = `<video src="${item.src}" class="max-w-full max-h-full object-contain rounded-lg" controls autoplay loop></video>`;
+            }
+            modal.classList.remove('hidden'); 
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeModal() { modal.classList.add('hidden'); modalContent.innerHTML = ''; document.body.style.overflow = 'auto'; stopSlideshow(); }
+        function showNext() { if (currentlyDisplayedItems.length === 0) return; currentIndex = (currentIndex + 1) % currentlyDisplayedItems.length; openModal(currentIndex); }
+        function showPrev() { if (currentlyDisplayedItems.length === 0) return; currentIndex = (currentIndex - 1 + currentlyDisplayedItems.length) % currentlyDisplayedItems.length; openModal(currentIndex); }
+        function startSlideshow() { if(slideshowInterval) return; slideshowPlayIcon.classList.add('hidden'); slideshowPauseIcon.classList.remove('hidden'); slideshowInterval = setInterval(showNext, 4000); }
+        function stopSlideshow() { clearInterval(slideshowInterval); slideshowInterval = null; slideshowPlayIcon.classList.remove('hidden'); slideshowPauseIcon.classList.add('hidden'); }
+        
+        // --- EVENT LISTENERS (OLAY DİNLEYİCİLER) ---
+        closeModalBtn.addEventListener('click', closeModal); 
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); }); 
+        nextBtn.addEventListener('click', showNext); 
+        prevBtn.addEventListener('click', showPrev);
+        filterButtons.forEach(button => button.addEventListener('click', () => { if (button.id === 'surprise-btn') return; filterButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active'); renderGallery(button.dataset.filter); }));
+        surpriseBtn.addEventListener('click', () => { if (currentlyDisplayedItems.length > 0) openModal(Math.floor(Math.random() * currentlyDisplayedItems.length)); });
+        slideshowBtn.addEventListener('click', () => slideshowInterval ? stopSlideshow() : startSlideshow());
+        playPauseBtn.addEventListener('click', () => { if (audio.paused) { audio.play(); playIcon.classList.add('hidden'); pauseIcon.classList.remove('hidden'); } else { audio.pause(); playIcon.classList.remove('hidden'); pauseIcon.classList.add('hidden'); }});
+        
+        // Klavye ve Swipe (Kaydırma) kontrolleri
+        document.addEventListener('keydown', e => { if (!modal.classList.contains('hidden')) { if (e.key === 'Escape') closeModal(); else if (e.key === 'ArrowRight') showNext(); else if (e.key === 'ArrowLeft') showPrev(); }});
+        modal.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+        modal.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); });
+        function handleSwipe() { if (touchEndX < touchStartX - 50) showNext(); if (touchEndX > touchStartX + 50) showPrev(); }
+        
+        // --- ARKA PLAN ANİMASYONU ---
+        const canvas = document.getElementById('particle-canvas'), ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth, canvas.height = window.innerHeight; let particlesArray;
+        class Particle { constructor(x,y,dirX,dirY,size) {this.x=x;this.y=y;this.directionX=dirX;this.directionY=dirY;this.size=size;} draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2,false);ctx.fillStyle='rgba(236,72,153,0.2)';ctx.fill();} update(){if(this.x>canvas.width||this.x<0)this.directionX=-this.directionX;if(this.y>canvas.height||this.y<0)this.directionY=-this.directionY;this.x+=this.directionX;this.y+=this.directionY;this.draw();}}
+        function initParticles(){particlesArray=[];let num=(canvas.height*canvas.width)/15e3;for(let i=0;i<num;i++){let size=Math.random()*2+1,x=Math.random()*(innerWidth-size*2-size*2)+size*2,y=Math.random()*(innerHeight-size*2-size*2)+size*2,dirX=Math.random()*.2-.1,dirY=Math.random()*.2-.1;particlesArray.push(new Particle(x,y,dirX,dirY,size));}}
+        function animateParticles(){requestAnimationFrame(animateParticles);ctx.clearRect(0,0,innerWidth,innerHeight);for(let i=0;i<particlesArray.length;i++)particlesArray[i].update();}
+
+        let debounceTimer;
+        window.addEventListener('resize',()=>{
+            canvas.width=innerWidth;canvas.height=innerHeight;initParticles();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => applyMasonryLayout(), 150);
+        });
+
+        // --- SAYFA YÜKLENMESİ ---
+        window.addEventListener('load', async () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            await buildAndVerifyMediaList(); 
+            let userLang = localStorage.getItem('galleryLanguage') || (navigator.language.startsWith('de') ? 'de' : 'tr');
+            setLanguage(userLang);
+            document.body.style.overflow = 'auto';
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => loadingOverlay.style.display = 'none', 800);
+            initParticles(); animateParticles();
+        });
+    </script>
+</body>
+</html>
+
