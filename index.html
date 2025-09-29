@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gözümden Anica</title>
+    <title>Gözümden Annika Marion</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,7 +60,7 @@
 
     <div id="loading-overlay">
         <i class="fa-solid fa-heart"></i>
-        <p class="font-dancing-script text-3xl mt-4" data-key="loadingText">Anica'nın En Güzel Anıları Yükleniyor...</p>
+        <p class="font-dancing-script text-3xl mt-4" data-key="loadingText">Annika'nın En Güzel Anıları Yükleniyor...</p>
     </div>
 
     <canvas id="particle-canvas"></canvas>
@@ -71,7 +71,7 @@
                 <button id="lang-tr" class="lang-btn" onclick="setLanguage('tr')">Türkçe</button>
                 <button id="lang-de" class="lang-btn" onclick="setLanguage('de')">Deutsch</button>
             </div>
-            <h1 class="text-5xl md:text-7xl font-dancing-script font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500" data-key="mainTitle">Gözümden Anica</h1>
+            <h1 class="text-5xl md:text-7xl font-dancing-script font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-rose-400 to-pink-500" data-key="mainTitle">Gözümden Annika Marion</h1>
             <p class="text-gray-300 text-lg" data-key="subtitle">Senin en doğal anların...</p>
         </header>
 
@@ -111,14 +111,17 @@
 
     <script>
         // --- DİL DESTEĞİ ---
-        const translations = { tr: { pageTitle: "Gözümden Anica", mainTitle: "Gözümden Anica", subtitle: "Senin en doğal anların...", loadingText: "Anica'nın En Güzel Anları Yükleniyor...", filterMixed: "Karışık", filterTimeline: "Zaman Tüneli", filterPhotos: "Fotoğraflar", filterVideos: "Videolar", filterFavorites: "Favoriler", filterSurprise: "Beni Şaşırt!", emptyGallery: "Bu kategoride gösterilecek bir anı bulunamadı." }, de: { pageTitle: "Anica durch meine Augen", mainTitle: "Anica durch meine Augen", subtitle: "Deine natürlichsten Momente...", loadingText: "Anicas schönste Momente werden geladen...", filterMixed: "Zufällig", filterTimeline: "Zeitleiste", filterPhotos: "Fotos", filterVideos: "Videos", filterFavorites: "Favoriten", filterSurprise: "Überrasch mich!", emptyGallery: "In dieser Kategorie wurden keine Momente gefunden." } };
+        const translations = {
+            tr: { pageTitle: "Gözümden Annika Marion", mainTitle: "Gözümden Annika Marion", subtitle: "Senin en doğal anların...", loadingText: "Annika'nın En Güzel Anıları Yükleniyor...", filterMixed: "Karışık", filterTimeline: "Zaman Tüneli", filterPhotos: "Fotoğraflar", filterVideos: "Videolar", filterFavorites: "Favoriler", filterSurprise: "Beni Şaşırt!", emptyGallery: "Bu kategoride gösterilecek bir anı bulunamadı." },
+            de: { pageTitle: "Annika Marion durch meine Augen", mainTitle: "Annika Marion durch meine Augen", subtitle: "Deine natürlichsten Momente...", loadingText: "Annikas schönste Momente werden geladen...", filterMixed: "Zufällig", filterTimeline: "Zeitleiste", filterPhotos: "Fotos", filterVideos: "Videos", filterFavorites: "Favoriten", filterSurprise: "Überrasch mich!", emptyGallery: "In dieser Kategorie wurden keine Momente gefunden." }
+        };
         function setLanguage(lang) { localStorage.setItem('galleryLanguage', lang); document.documentElement.lang = lang; document.querySelectorAll('[data-key]').forEach(el => { const key = el.getAttribute('data-key'); if (translations[lang][key]) { const icon = el.querySelector('i'); el.innerHTML = icon ? `<i class="${icon.className}"></i> ${translations[lang][key]}` : translations[lang][key]; } }); document.title = translations[lang].pageTitle; document.getElementById('lang-tr').classList.toggle('active', lang === 'tr'); document.getElementById('lang-de').classList.toggle('active', lang === 'de'); renderGallery(document.querySelector('.filter-btn.active')?.dataset.filter || 'all'); }
 
         let baseMediaItems = []; let randomOrderItems = []; let timelineOrderItems = [];
         
         // --- KALICI FAVORİLER ---
         function loadFavorites() {
-            const favoriteSrcs = JSON.parse(localStorage.getItem('anicaFavorites') || '[]');
+            const favoriteSrcs = JSON.parse(localStorage.getItem('annikaFavorites') || '[]');
             baseMediaItems.forEach(item => {
                 if (favoriteSrcs.includes(item.src)) {
                     item.favorite = true;
@@ -127,7 +130,7 @@
         }
         function saveFavorites() {
             const favoriteSrcs = baseMediaItems.filter(item => item.favorite).map(item => item.src);
-            localStorage.setItem('anicaFavorites', JSON.stringify(favoriteSrcs));
+            localStorage.setItem('annikaFavorites', JSON.stringify(favoriteSrcs));
         }
 
         // --- AKILLI DOSYA KONTROLÜ ---
@@ -205,7 +208,7 @@
                 if (item.type === 'image') {
                     const img = new Image();
                     img.src = item.src;
-                    img.alt = "Anı";
+                    img.alt = "Annika Marion Anısı";
                     img.className = "w-full h-auto object-cover";
                     img.loading = "lazy";
                     mediaPromises.push(new Promise(resolve => img.onload = resolve));
@@ -295,4 +298,6 @@
     </script>
 </body>
 </html>
+
+
 
